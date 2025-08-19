@@ -9,8 +9,14 @@ fn main() {
     let os = System::long_os_version().unwrap_or_else(|| "Unknown OS".to_string());
 
     // Get CPU brand
-    let cpu_brand = sys.global_cpu_info().brand().to_string();
+    let _cpu = sys.global_cpu_info();
+    let cpu_brand = sys
+        .cpus()
+        .first()
+        .map(|_cpu| _cpu.brand().to_string())
+        .unwrap_or_default();
     let cpu_display = if cpu_brand.is_empty() { "Unknown CPU".to_string() } else { cpu_brand };
+
 
     // Total RAM in KB -> convert to GB
     let total_ram_kb = sys.total_memory();
