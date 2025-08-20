@@ -29,12 +29,20 @@ fn main() {
     let (s_value, s_unit) = bytes_to_readable(total_bytes);
 
     // Total RAM in KB -> convert to GB
-    let b_total = sys.total_memory();
-    let (r_value, r_unit) = bytes_to_readable(b_total);
+    let total_ram = sys.total_memory();
+    let free_ram  = sys.free_memory();
+    let used_ram  = total_ram - free_ram;
+    let (u_value, u_unit) = bytes_to_readable(used_ram);
+    let (r_value, r_unit) = bytes_to_readable(total_ram);
 
+    // DirectX version
+
+
+    // Graphics
 
     println!("Operating System: {}", os);
     println!("CPU: {}", cpu_display);
+    println!("Used RAM: {} {}", u_value, u_unit);
     println!("Total RAM: {} {}", r_value, r_unit);
     println!("Storage Used:  {} {}", used_val, used_unit);
     println!("Total Storage: {} {}", s_value, s_unit);
@@ -43,16 +51,28 @@ fn main() {
 // function to see whether the memory is in TB or GB
 fn bytes_to_readable(bytes: u64) -> (u64, &'static str) {
     let bytes_f = bytes as f64;
-    let tb = bytes_f / 1024.0 / 1024.0 / 1024.0 / 1024.0;
 
+    let tb = bytes_f / 1024.0 / 1024.0 / 1024.0 / 1024.0;
     if tb >= 1.0 {
-        // TB case
-        let rounded = tb.round() as u64;
-        (rounded, "TB")
-    } else {
-        // GB case
-        let gb = bytes_f / 1024.0 / 1024.0 / 1024.0;
-        let rounded = gb.round() as u64;
-        (rounded, "GB")
+        return (tb.round() as u64, "TB");
     }
+
+    let gb = bytes_f / 1024.0 / 1024.0 / 1024.0;
+    if gb >= 1.0 {
+        return (gb.round() as u64, "GB");
+    }
+
+    let mb = bytes_f / 1024.0 / 1024.0;
+    if mb >= 1.0 {
+        return (mb.round() as u64, "MB");
+    }
+
+    let kb = bytes_f / 1024.0;
+    if kb >= 1.0 {
+        return (kb.round() as u64, "KB");
+    }
+
+    // If it's less than 1 KB, return bytes
+    (bytes, "B")
 }
+
