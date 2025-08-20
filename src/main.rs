@@ -30,9 +30,6 @@ fn main() {
 
     // Total RAM in KB -> convert to GB
     let total_ram = sys.total_memory();
-    let free_ram  = sys.free_memory();
-    let used_ram  = total_ram - free_ram;
-    let (u_value, u_unit) = bytes_to_readable(used_ram);
     let (r_value, r_unit) = bytes_to_readable(total_ram);
 
     // DirectX version
@@ -42,7 +39,6 @@ fn main() {
 
     println!("Operating System: {}", os);
     println!("CPU: {}", cpu_display);
-    println!("Used RAM: {} {}", u_value, u_unit);
     println!("Total RAM: {} {}", r_value, r_unit);
     println!("Storage Used:  {} {}", used_val, used_unit);
     println!("Total Storage: {} {}", s_value, s_unit);
