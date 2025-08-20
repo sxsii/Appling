@@ -18,19 +18,16 @@ fn main() {
     let cpu_display = if cpu_brand.is_empty() { "Unknown CPU".to_string() } else { cpu_brand };
 
     // Get storage
-      /* let total_bytes: u64 = sys.disks()
-        .iter()
-        .map(|d| d.total_space())
-        .sum();
+    let mut disks = Disks::new_with_refreshed_list();
 
+    let total_bytes: u64 = disks.list().iter().map(|d| d.total_space()).sum();
+    let available_bytes: u64 = disks.list().iter().map(|d| d.available_space()).sum();
+
+    let used_bytes = total_bytes - available_bytes;
+
+    let (used_val, used_unit) = bytes_to_readable(used_bytes);
     let (s_value, s_unit) = bytes_to_readable(total_bytes);
-*/
 
-println!("=> disks:");
-let disks = Disks::new_with_refreshed_list();
-for disk in &disks {
-    println!("{disk:?}");
-}
     // Total RAM in KB -> convert to GB
     let b_total = sys.total_memory();
     let (r_value, r_unit) = bytes_to_readable(b_total);
@@ -39,7 +36,8 @@ for disk in &disks {
     println!("Operating System: {}", os);
     println!("CPU: {}", cpu_display);
     println!("Total RAM: {} {}", r_value, r_unit);
-    //println!("Total Storage: {} {}", s_value, s_unit);
+    println!("Storage Used:  {} {}", used_val, used_unit);
+    println!("Total Storage: {} {}", s_value, s_unit);
 }
 
 // function to see whether the memory is in TB or GB
