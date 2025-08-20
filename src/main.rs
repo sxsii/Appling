@@ -18,7 +18,7 @@ fn main() {
     let cpu_display = if cpu_brand.is_empty() { "Unknown CPU".to_string() } else { cpu_brand };
 
     // Get storage
-    let mut disks = Disks::new_with_refreshed_list();
+    let disks = Disks::new_with_refreshed_list();
 
     let total_bytes: u64 = disks.list().iter().map(|d| d.total_space()).sum();
     let available_bytes: u64 = disks.list().iter().map(|d| d.available_space()).sum();
