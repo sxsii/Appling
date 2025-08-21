@@ -33,9 +33,10 @@ fn main() {
     let (r_value, r_unit) = bytes_to_readable(total_ram);
 
     // DirectX version
-
+    
 
     // Graphics
+
 
     println!("Operating System: {}", os);
     println!("CPU: {}", cpu_display);
@@ -44,7 +45,7 @@ fn main() {
     println!("Total Storage: {} {}", s_value, s_unit);
 }
 
-// function to see whether the memory is in TB or GB
+// function to see what unit of Bytes
 fn bytes_to_readable(bytes: u64) -> (u64, &'static str) {
     let bytes_f = bytes as f64;
 

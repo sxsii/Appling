@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 sysinfo = "0.37"
+iced = "0.13"
