@@ -2,8 +2,9 @@ use sysinfo::{Disks, System};
 use winreg::enums::HKEY_LOCAL_MACHINE;
 use winreg::RegKey;
 use windows::{
-    Win32::Graphics::Dxgi::{CreateDXGIFactory1, IDXGIFactory1, IDXGIAdapter1},
-    core::Interface,
+    Win32::Graphics::Dxgi::{
+        CreateDXGIFactory1, IDXGIFactory1, DXGI_ADAPTER_DESC1,
+    }
 };
 
 fn main() {
@@ -56,29 +57,8 @@ fn main() {
     println!("DirectX Version: Unknown"); 
 
     // Graphics
-     unsafe {
-        let mut factory: Option<IDXGIFactory1> = None;
-        if CreateDXGIFactory1(&IDXGIFactory1::IID, &mut factory as *mut _ as *mut _).is_ok() {
-            if let Some(factory) = factory {
-                let mut i = 0;
-                while let Ok(adapter) = factory.EnumAdapters1(i) {
-                    let mut desc: DXGI_ADAPTER_DESC1 = std::mem::zeroed();
-                    if adapter.GetDesc1(&mut desc).is_ok() {
-                        let name = String::from_utf16_lossy(
-                            &desc.Description
-                                .iter()
-                                .take_while(|&&c| c != 0)
-                                .cloned()
-                                .collect::<Vec<u16>>(),
-                        );
-                        println!("GPU {}: {}", i, name);
-                        println!("Dedicated VRAM: {} MB", desc.DedicatedVideoMemory / 1024 / 1024);
-                        println!("Shared System Memory: {} MB", desc.SharedSystemMemory / 1024 / 1024);
-                    }
-                    i += 1;
-                }
-            }
-        }
+    if let Err(e) = print_gpus() {
+        eprintln!("Failed to enumerate GPUs: {e}");
     }
 
     // Printing
@@ -117,3 +97,45 @@ fn bytes_to_readable(bytes: u64) -> (u64, &'static str) {
     (bytes, "B")
 }
 
+
+fn print_gpus() -> Result<(), Box<dyn std::error::Error>> {
+    unsafe {
+        let factory: IDXGIFactory1 = CreateDXGIFactory1()?;
+        println!("✅ DXGI Factory created");
+
+        let mut i = 0;
+        loop {
+            match factory.EnumAdapters1(i) {
+                Ok(adapter) => {
+                    println!("✅ Adapter {i} found");
+
+                    let desc: DXGI_ADAPTER_DESC1 = adapter.GetDesc1()?;
+                    let name = String::from_utf16_lossy(
+                        &desc.Description
+                            .iter()
+                            .take_while(|&&c| c != 0)
+                            .cloned()
+                            .collect::<Vec<u16>>(),
+                    );
+
+                    println!("GPU {}: {}", i, name);
+                    println!(
+                        "Dedicated VRAM: {} MB",
+                        desc.DedicatedVideoMemory / 1024 / 1024
+                    );
+                    println!(
+                        "Shared System Memory: {} MB",
+                        desc.SharedSystemMemory / 1024 / 1024
+                    );
+
+                    i += 1;
+                }
+                Err(_) => {
+                    println!("❌ No more adapters at index {i}");
+                    break;
+                }
+            }
+        }
+    }
+    Ok(())
+}
