@@ -1,8 +1,4 @@
-use sysinfo::{System, SystemExt, CpuExt, DiskExt, PidExt}; // For OS, CPU, RAM, storage, processes
-use winreg::enums::*;   // For registry (DirectX, etc.)
-use winreg::RegKey;
-use std::process::Command; // For GPU info via dxdiag or wmic (if you want)
-use std::collections::HashMap; // For Priority List, App History, etc.
+use sysinfo::{Disks, System};
 
 fn main() {
     // Tab selector decides what to run
@@ -77,5 +73,23 @@ fn get_storage_info() {
 }
 
 fn get_directx_version() {
+    let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
+    if let Ok(directx) = hklm.open_subkey("SOFTWARE\\Microsoft\\DirectX") {
+        if let Ok(version) = directx.get_value::<String, _>("Version") {
+            let human_readable = match version.as_str() {
+                "4.09.00.0904" => "DirectX 9.0c",
+                "4.10.0000.0904" => "DirectX 10",
+                "4.11.0000.0904" => "DirectX 11",
+                "4.12.0000.0904" => "DirectX 12",
+                _ => "Unknown / Newer DirectX",
+            };
+            println!("DirectX Version: {} ({})", human_readable, version);
+            return;
+        }
+    }
+    println!("DirectX Version: Unknown"); 
+}
+
+fn get_graphics_info() {
     
 }
