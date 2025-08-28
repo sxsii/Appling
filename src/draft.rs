@@ -1,4 +1,28 @@
+/*
+[package]
+name = "appling"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+sysinfo = "0.37"
+iced = "0.13"
+winreg = "0.55.0"
+windows = { version = "0.61.3", features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Dxgi",
+    "Win32_Graphics_Direct3D",
+    "Win32_Graphics_Direct3D11",
+    "Win32_Graphics_Direct3D12",
+] }
+
+*/
+
 use sysinfo::{Disks, System};
+use winreg::{
+    enums::HKEY_LOCAL_MACHINE,
+    RegKey,
+};
 
 fn main() {
     // Tab selector decides what to run

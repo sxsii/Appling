@@ -1,30 +1,71 @@
 use sysinfo::{Disks, System};
-use winreg::enums::HKEY_LOCAL_MACHINE;
-use winreg::RegKey;
-use windows::{
-    Win32::Graphics::Dxgi::{
-        CreateDXGIFactory1, IDXGIFactory1, DXGI_ADAPTER_DESC1,
-    }
+use winreg::{
+    enums::HKEY_LOCAL_MACHINE,
+    RegKey,
 };
 
 fn main() {
-    // Initialize the System struct and collect all info
     let mut sys = System::new_all();
     sys.refresh_all();
 
-    // Get OS version
+    // Tab selector decides what to run
+    show_computer_specifications(&sys);
+    
+    //show_task_manager();
+    
+    //show_priority_list();
+}
+
+// Section 1
+fn show_computer_specifications(sys: &System) {
+    get_os_info(sys);
+    get_processor_info(sys);
+    get_memory_info(sys);
+    get_storage_info();
+    get_directx_version();
+    get_graphics_info();
+}
+
+// Section 2
+/*
+fn show_task_manager() {
+    show_processes();
+    show_performance();
+    show_app_history();
+    show_startup_apps();
+}
+
+// Section 3
+fn show_priority_list() {
+    // logic
+}
+*/
+fn get_os_info(_sys: &System) {
+     // Get OS version
     let os = System::long_os_version().unwrap_or_else(|| "Unknown OS".to_string());
 
-    // Get CPU brand
+    println!("OS: {}", os);
+}
+
+fn get_processor_info(sys: &System) {
+   // Get CPU brand
     let _cpu = sys.global_cpu_usage();
     let cpu_brand = sys
         .cpus()
         .first()
         .map(|_cpu| _cpu.brand().to_string())
         .unwrap_or_default();
-    let cpu_display = if cpu_brand.is_empty() { "Unknown CPU".to_string() } else { cpu_brand };
+    let _cpu_display = if cpu_brand.is_empty() { "Unknown CPU".to_string() } else { cpu_brand };
+}
 
-    // Get storage
+fn get_memory_info(sys: &System) {
+    let total_ram = sys.total_memory();
+    let (r_value, r_unit) = bytes_to_readable(total_ram);
+
+    println!("Total RAM: {} {}", r_value, r_unit);
+}
+
+fn get_storage_info() {
     let disks = Disks::new_with_refreshed_list();
 
     let total_bytes: u64 = disks.list().iter().map(|d| d.total_space()).sum();
@@ -35,11 +76,11 @@ fn main() {
     let (used_val, used_unit) = bytes_to_readable(used_bytes);
     let (s_value, s_unit) = bytes_to_readable(total_bytes);
 
-    // Total RAM in KB -> convert to GB
-    let total_ram = sys.total_memory();
-    let (r_value, r_unit) = bytes_to_readable(total_ram);
+    println!("Used Storage: {} {}", used_val, used_unit);
+    println!("Total Storage: {} {}", s_value, s_unit);
+}
 
-    // DirectX version
+fn get_directx_version() {
     let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
     if let Ok(directx) = hklm.open_subkey("SOFTWARE\\Microsoft\\DirectX") {
         if let Ok(version) = directx.get_value::<String, _>("Version") {
@@ -55,19 +96,12 @@ fn main() {
         }
     }
     println!("DirectX Version: Unknown"); 
-
-    // Graphics
-    if let Err(e) = print_gpus() {
-        eprintln!("Failed to enumerate GPUs: {e}");
-    }
-
-    // Printing
-    println!("Operating System: {}", os);
-    println!("CPU: {}", cpu_display);
-    println!("Total RAM: {} {}", r_value, r_unit);
-    println!("Storage Used:  {} {}", used_val, used_unit);
-    println!("Total Storage: {} {}", s_value, s_unit);
 }
+
+fn get_graphics_info() {
+    
+}
+
 
 // function to see what unit of Bytes
 fn bytes_to_readable(bytes: u64) -> (u64, &'static str) {
@@ -97,45 +131,3 @@ fn bytes_to_readable(bytes: u64) -> (u64, &'static str) {
     (bytes, "B")
 }
 
-
-fn print_gpus() -> Result<(), Box<dyn std::error::Error>> {
-    unsafe {
-        let factory: IDXGIFactory1 = CreateDXGIFactory1()?;
-        println!("✅ DXGI Factory created");
-
-        let mut i = 0;
-        loop {
-            match factory.EnumAdapters1(i) {
-                Ok(adapter) => {
-                    println!("✅ Adapter {i} found");
-
-                    let desc: DXGI_ADAPTER_DESC1 = adapter.GetDesc1()?;
-                    let name = String::from_utf16_lossy(
-                        &desc.Description
-                            .iter()
-                            .take_while(|&&c| c != 0)
-                            .cloned()
-                            .collect::<Vec<u16>>(),
-                    );
-
-                    println!("GPU {}: {}", i, name);
-                    println!(
-                        "Dedicated VRAM: {} MB",
-                        desc.DedicatedVideoMemory / 1024 / 1024
-                    );
-                    println!(
-                        "Shared System Memory: {} MB",
-                        desc.SharedSystemMemory / 1024 / 1024
-                    );
-
-                    i += 1;
-                }
-                Err(_) => {
-                    println!("❌ No more adapters at index {i}");
-                    break;
-                }
-            }
-        }
-    }
-    Ok(())
-}
