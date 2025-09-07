@@ -1,4 +1,4 @@
-use sysinfo::{Disks, System};
+use sysinfo::{Disks, /*Process, */System};
 use winreg::{
     enums::HKEY_LOCAL_MACHINE,
     RegKey,
@@ -8,6 +8,8 @@ use windows::{
         CreateDXGIFactory1, IDXGIFactory1, DXGI_ADAPTER_DESC1, DXGI_ADAPTER_FLAG_SOFTWARE,
     }
 };
+use std::{thread, time::Duration};
+
 
 fn main() {
     let mut sys = System::new_all();
@@ -16,9 +18,18 @@ fn main() {
     // Tab selector decides what to run
     show_computer_specifications(&sys);
     
-    //show_task_manager();
+    show_activity_monitor(&mut sys);
     
     //show_priority_list();
+}
+
+// for show_processes
+#[derive(Debug)]
+struct ProcessRow {
+    pid: i32,
+    name: String,
+    cpu: f32,
+    memory: String
 }
 
 // Section 1
@@ -32,19 +43,20 @@ fn show_computer_specifications(sys: &System) {
 }
 
 // Section 2
-/*
-fn show_task_manager() {
-    show_processes();
-    show_performance();
-    show_app_history();
-    show_startup_apps();
+
+fn show_activity_monitor(sys:&mut System) {
+    show_processes(sys);
+    //show_usage();
+    //show_temperature();
 }
 
+/*
 // Section 3
 fn show_priority_list() {
     // logic
 }
 */
+
 fn get_os_info(_sys: &System) {
      // Get OS version
     let os = System::long_os_version().unwrap_or_else(|| "Unknown OS".to_string());
@@ -85,7 +97,22 @@ fn get_storage_info() {
     println!("Total Storage: {} {}", s_value, s_unit);
 }
 
+fn show_processes(sys: &mut System) {
+    loop {
+        let table = collect_process_table(sys);
 
+        // Example: printing as a table in CLI
+        println!("{:<8} {:<25} {:<10} {:<15}", "PID", "NAME", "CPU %", "MEM");
+        for row in &table {
+            println!("{:<8} {:<25} {:<10.2} {:<15}", row.pid, row.name, row.cpu, row.memory);
+        }
+        println!("--- Refreshing ---");
+
+        thread::sleep(Duration::from_secs(2));
+    }
+}
+
+// sub functions
 fn get_directx_version() {
     let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
     if let Ok(directx) = hklm.open_subkey("SOFTWARE\\Microsoft\\DirectX") {
@@ -176,4 +203,22 @@ fn bytes_to_readable(bytes: u64) -> (u64, &'static str) {
 
     // If it's less than 1 KB, return bytes
     (bytes, "B")
+}
+
+fn collect_process_table(sys: &mut System) -> Vec<ProcessRow> {
+    sys.refresh_all();
+
+    sys.processes()
+        .iter()
+        .map(|(pid, process)| {
+            let (val, unit) = bytes_to_readable(process.memory());
+            ProcessRow {
+                pid: pid.as_u32() as i32,
+                name: process.name().to_string_lossy().into_owned(),
+                cpu: process.cpu_usage(),
+                memory: format!("{} {}", val, unit),
+            }
+        })
+
+        .collect()
 }
