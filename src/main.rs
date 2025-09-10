@@ -98,7 +98,7 @@ fn get_storage_info() {
 }
 
 fn show_processes(sys: &mut System) {
-    loop {
+    for _ in 0..1 {
         let table = collect_process_table(sys);
 
         // Example: printing as a table in CLI
